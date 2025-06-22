@@ -8,7 +8,7 @@ MakeWindow({
 
         Title = "Cartola Hub",
 
-        Animation = "Grupo Dos Cartola"
+        Animation = "Brookhaven RP"
 
     },
 
