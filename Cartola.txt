@@ -1512,4 +1512,544 @@ AddToggle(All, {
 
     Default = false,
 
-    Callback = f
+    Callback = function(value)
+
+        espAtivado = value
+
+        if espAtivado then
+
+            monitorarPlayers()
+
+            Players.PlayerAdded:Connect(function(player)
+
+                if espAtivado and player ~= LocalPlayer then
+
+                    criarESP(player)
+
+                end
+
+            end)
+
+        else
+
+            for player, data in pairs(espObjects) do
+
+                if data.line then
+
+                    data.line.Visible = false
+
+                    data.line:Remove()
+
+                end
+
+                if data.label then
+
+                    data.label:Destroy()
+
+                end
+
+            end
+
+            espObjects = {}
+
+        end
+
+    end
+
+})
+
+
+
+
+
+local section = AddSection(Misc, {"Anti:"})
+
+
+
+
+
+local TeleportService = game:GetService("TeleportService")
+
+local Players = game:GetService("Players")
+
+local RunService = game:GetService("RunService")
+
+
+
+local LocalPlayer = Players.LocalPlayer
+
+local placeId = game.PlaceId
+
+local autoRejoinAtivado = false
+
+
+
+-- Função que executa o rejoin
+
+local function autoRejoin()
+
+    if autoRejoinAtivado then
+
+        warn("[Auto Rejoin] Tentando reconectar ao jogo...")
+
+        TeleportService:Teleport(placeId, LocalPlayer)
+
+    end
+
+end
+
+
+
+-- Monitora tentativas de teleporte que falham
+
+LocalPlayer.OnTeleport:Connect(function(state)
+
+    if autoRejoinAtivado and state == Enum.TeleportState.Failed then
+
+        warn("[Auto Rejoin] Falha no teleporte. Reentrando...")
+
+        task.wait(2)
+
+        autoRejoin()
+
+    end
+
+end)
+
+
+
+-- Checa se o jogador foi desconectado
+
+local function monitorarConexao()
+
+    while autoRejoinAtivado and RunService:IsRunning() do
+
+        task.wait(5)
+
+        if not LocalPlayer or not LocalPlayer.Parent then
+
+            warn("[Auto Rejoin] Jogador desconectado. Reentrando...")
+
+            autoRejoin()
+
+            break
+
+        end
+
+    end
+
+end
+
+
+
+-- Toggle na interface
+
+AddToggle(Misc, {
+
+    Name = "Auto Rejoin",
+
+    Default = false,
+
+    Callback = function(Value)
+
+        autoRejoinAtivado = Value
+
+        if autoRejoinAtivado then
+
+            print("[Auto Rejoin] Ativado")
+
+            task.spawn(monitorarConexao)
+
+        else
+
+            print("[Auto Rejoin] Desativado")
+
+        end
+
+    end
+
+})
+
+
+
+
+
+
+
+local Players = game:GetService("Players")
+
+local LocalPlayer = Players.LocalPlayer
+
+
+
+local antiVoidConnection = nil
+
+local antiVoidPlatform = nil
+
+
+
+-- Função para criar a plataforma anti-void
+
+local function createAntiVoidPlatform()
+
+    if not antiVoidPlatform then
+
+        antiVoidPlatform = Instance.new("Part")
+
+        antiVoidPlatform.Size = Vector3.new(500, 1, 500)
+
+        antiVoidPlatform.Position = Vector3.new(0, -50, 0)
+
+        antiVoidPlatform.Anchored = true
+
+        antiVoidPlatform.Transparency = 1
+
+        antiVoidPlatform.CanCollide = true
+
+        antiVoidPlatform.Name = "AntiVoid"
+
+        antiVoidPlatform.Parent = workspace
+
+    end
+
+end
+
+
+
+-- Função para remover a plataforma
+
+local function removeAntiVoidPlatform()
+
+    if antiVoidPlatform then
+
+        antiVoidPlatform:Destroy()
+
+        antiVoidPlatform = nil
+
+    end
+
+end
+
+
+
+-- Função para monitorar o Void
+
+local function startAntiVoid()
+
+    antiVoidConnection = game:GetService("RunService").Heartbeat:Connect(function()
+
+        local character = LocalPlayer.Character
+
+        if character and character:FindFirstChild("HumanoidRootPart") then
+
+            local hrp = character.HumanoidRootPart
+
+            if hrp.Position.Y < -100 then
+
+                hrp.CFrame = CFrame.new(0, 50, 0)
+
+            end
+
+        end
+
+    end)
+
+end
+
+
+
+-- Função para parar o monitoramento
+
+local function stopAntiVoid()
+
+    if antiVoidConnection then
+
+        antiVoidConnection:Disconnect()
+
+        antiVoidConnection = nil
+
+    end
+
+end
+
+
+
+-- Botão Toggle
+
+AddToggle(Misc, {
+
+    Name = "Anti void",
+
+    Default = false,
+
+    Callback = function(Value)
+
+        if Value then
+
+            createAntiVoidPlatform()
+
+            startAntiVoid()
+
+        else
+
+            stopAntiVoid()
+
+            removeAntiVoidPlatform()
+
+        end
+
+    end
+
+})
+
+
+
+local Players = game:GetService("Players")
+
+local LocalPlayer = Players.LocalPlayer
+
+
+
+local antiSeatEnabled = false
+
+local seatConnections = {}
+
+
+
+-- Função para proteger contra sentar
+
+local function setupAntiSit(character)
+
+    local humanoid = character:WaitForChild("Humanoid", 5)
+
+    if not humanoid then return end
+
+
+
+    local connection = humanoid.Seated:Connect(function(isSeated)
+
+        if isSeated and antiSeatEnabled then
+
+            humanoid.Sit = false
+
+        end
+
+    end)
+
+
+
+    table.insert(seatConnections, connection)
+
+end
+
+
+
+-- Função para limpar conexões anteriores
+
+local function disconnectAllSeats()
+
+    for _, conn in ipairs(seatConnections) do
+
+        if conn.Connected then
+
+            conn:Disconnect()
+
+        end
+
+    end
+
+    table.clear(seatConnections)
+
+end
+
+
+
+-- Detectar novo personagem
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+
+    if antiSeatEnabled then
+
+        setupAntiSit(char)
+
+    end
+
+end)
+
+
+
+-- Interface Toggle
+
+AddToggle(Misc, {
+
+    Name = "Anti Sit",
+
+    Default = false,
+
+    Callback = function(Value)
+
+        antiSeatEnabled = Value
+
+
+
+        if Value then
+
+            -- Aplicar imediatamente se já tiver personagem
+
+            if LocalPlayer.Character then
+
+                setupAntiSit(LocalPlayer.Character)
+
+            end
+
+        else
+
+            disconnectAllSeats()
+
+        end
+
+    end
+
+})
+
+
+
+
+
+local section = AddSection(Misc, {"Home:"})
+
+
+
+
+
+-- Referências iniciais
+
+
+
+local Players = game:GetService("Players")
+
+
+
+local LocalPlayer = Players.LocalPlayer
+
+local Workspace = game:GetService("Workspace")
+
+
+
+-- Função global para identificar barreiras de ban
+
+local function isBanWall(part)
+
+    return part:IsA("BasePart")
+
+        and part.Transparency == 1
+
+        and part.Color == Color3.fromRGB(255, 0, 0)
+
+        and part.CanCollide == true
+
+        and part.Size.Magnitude > 10 -- geralmente barreiras grandes
+
+end
+
+
+
+-- Guardar conexão para o Auto Unban
+
+local autoUnbanConnection = nil
+
+
+
+-- Toggle: Auto Unban
+
+AddToggle(Misc, {
+
+    Name = "Auto Unban",
+
+    Default = false,
+
+    Callback = function(Value)
+
+        if Value then
+
+            -- Remove barreiras existentes
+
+            for _, part in pairs(Workspace:GetDescendants()) do
+
+                if isBanWall(part) then
+
+                    part:Destroy()
+
+                end
+
+            end
+
+
+
+            -- Conecta monitoramento
+
+            autoUnbanConnection = Workspace.DescendantAdded:Connect(function(descendant)
+
+                if isBanWall(descendant) then
+
+                    task.wait(0.1)
+
+                    descendant:Destroy()
+
+                end
+
+            end)
+
+
+
+            print("Auto Unban")
+
+        else
+
+            -- Desconecta se o toggle for desativado
+
+            if autoUnbanConnection then
+
+                autoUnbanConnection:Disconnect()
+
+                autoUnbanConnection = nil
+
+                print("Auto Unban")
+
+            end
+
+        end
+
+    end
+
+})
+
+
+
+-- Botão: Unban Manual
+
+AddButton(Misc, {
+
+    Name = "Unban",
+
+    Callback = function()
+
+        local count = 0
+
+        for _, part in pairs(Workspace:GetDescendants()) do
+
+            if isBanWall(part) then
+
+                part:Destroy()
+
+                count += 1
+
+            end
+
+        end
+
+        print("Unban Manual:", count)
+
+    end
+
+})
