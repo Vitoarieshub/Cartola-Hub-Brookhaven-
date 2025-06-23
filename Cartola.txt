@@ -2060,36 +2060,73 @@ local Troll = MakeTab({Name = "Troll"})
 
 
 local Players = game:GetService("Players")
+
 local RunService = game:GetService("RunService")
 
+local Camera = workspace.CurrentCamera
+
+
+
 local LocalPlayer = Players.LocalPlayer
+
 local playerName = ""
+
 local jogadorSelecionado = nil
 
+
+
 local bangLoop = nil
+
 local faceLoop = nil
 
+local observarConnection = nil
+
+local observando = false
+
+
+
 -- Função para encontrar jogador
+
 local function encontrarJogador(nome)
+
 	local lowerName = nome:lower()
+
 	for _, player in pairs(Players:GetPlayers()) do
+
 		if player.Name:lower():sub(1, #lowerName) == lowerName then
+
 			return player
+
 		end
+
 	end
+
 	return nil
+
 end
 
+
+
 -- Caixa de texto para digitar o nome do jogador
+
 AddTextBox(Troll, {
+
 	Name = "Target",
+
 	Default = "",
+
 	Placeholder = "Nome do jogador aqui...",
+
 	Callback = function(text)
+
 		playerName = text
+
 		jogadorSelecionado = encontrarJogador(playerName)
+
 	end
+
 })
+
 
 
 -- Observar jogador
@@ -2097,104 +2134,198 @@ AddTextBox(Troll, {
 local function pararObservar()
 
 	if observarConnection then
+
 		observarConnection:Disconnect()
+
 		observarConnection = nil
+
 	end
+
 	observando = false
+
 	if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+
 		Camera.CameraSubject = LocalPlayer.Character.Humanoid
+
 	end
+
 end
+
+
 
 local function iniciarObservar(jogador)
+
 	if not jogador or jogador == LocalPlayer then return end
+
 	observando = true
+
 	if not jogador.Character or not jogador.Character:FindFirstChild("Humanoid") then return end
+
 	Camera.CameraSubject = jogador.Character.Humanoid
+
 	observarConnection = jogador.CharacterAdded:Connect(function()
-		wait(1)
+
+		task.wait(1)
+
 		if observando and jogador.Character and jogador.Character:FindFirstChild("Humanoid") then
+
 			Camera.CameraSubject = jogador.Character.Humanoid
+
 		end
+
 	end)
+
 end
 
+
+
 AddToggle(Troll, {
+
 	Name = "View",
+
 	Default = false,
+
 	Callback = function(Value)
+
 		jogadorSelecionado = encontrarJogador(playerName)
+
 		if Value then
+
 			if jogadorSelecionado then
+
 				iniciarObservar(jogadorSelecionado)
+
 			end
+
 		else
+
 			pararObservar()
+
 		end
+
 	end
+
 })
 
 
--- Bang v1: ficar atrás, indo pra frente e pra trás rapidamente
+
+-- Bang v1
+
 AddToggle(Troll, {
+
 	Name = "Bang v1",
+
 	Default = false,
+
 	Callback = function(Value)
+
 		if bangLoop then
+
 			bangLoop:Disconnect()
+
 			bangLoop = nil
+
 		end
 
+
+
 		if Value and jogadorSelecionado then
+
 			bangLoop = RunService.RenderStepped:Connect(function()
+
 				local targetHRP = jogadorSelecionado.Character and jogadorSelecionado.Character:FindFirstChild("HumanoidRootPart")
+
 				local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 
+
+
 				if targetHRP and myHRP then
+
 					local backPos = targetHRP.CFrame * CFrame.new(0, 0, 2.5)
+
 					local forwardPos = targetHRP.CFrame * CFrame.new(0, 0, 1.5)
 
-					-- Movimento mais rápido
-					local t = tick() * 3 % 1  -- velocidade triplicada
+
+
+					local t = tick() * 3 % 1
+
 					local lerped = backPos:Lerp(forwardPos, math.abs(math.sin(t * math.pi)))
 
+
+
 					myHRP.CFrame = CFrame.new(lerped.Position, targetHRP.Position)
+
 				end
+
 			end)
+
 		end
+
 	end
+
 })
 
--- Bang Face v1: ficar de frente na cara, com cintura na altura do rosto
+
+
+-- Bang Face v1
+
 AddToggle(Troll, {
+
 	Name = "Bang Face v1",
+
 	Default = false,
+
 	Callback = function(Value)
+
 		if faceLoop then
+
 			faceLoop:Disconnect()
+
 			faceLoop = nil
+
 		end
+
+
 
 		if Value and jogadorSelecionado then
+
 			faceLoop = RunService.RenderStepped:Connect(function()
+
 				local targetHRP = jogadorSelecionado.Character and jogadorSelecionado.Character:FindFirstChild("HumanoidRootPart")
+
 				local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 
+
+
 				if targetHRP and myHRP then
-					local baseOffset = CFrame.new(0, 1.2, -1.5)  -- subir o personagem + distância frontal
-					local fwdOffset = CFrame.new(0, 1.2, -2.5)  -- posição alternada
+
+					local baseOffset = CFrame.new(0, 1.2, -1.5)
+
+					local fwdOffset = CFrame.new(0, 1.2, -2.5)
+
+
 
 					local frontPos = targetHRP.CFrame * baseOffset
+
 					local forwardPos = targetHRP.CFrame * fwdOffset
 
-					-- Movimento mais rápido
+
+
 					local t = tick() * 3 % 1
+
 					local lerped = frontPos:Lerp(forwardPos, math.abs(math.sin(t * math.pi)))
 
-					myHRP.CFrame = CFrame.new(lerped.Position, targetHRP.Position + Vector3.new(0, 1.2, 0))  -- olhar pra cabeça
+
+
+					myHRP.CFrame = CFrame.new(lerped.Position, targetHRP.Position + Vector3.new(0, 1.2, 0))
+
 				end
+
 			end)
+
 		end
+
 	end
+
 })
 
