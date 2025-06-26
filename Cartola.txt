@@ -8,7 +8,7 @@ MakeWindow({
 
         Title = "Cartola Hub",
 
-        Animation = "Brookhaven RP"
+        Animation = "Grupo Dos Cartola"
 
     },
 
@@ -69,6 +69,10 @@ local Main = MakeTab({Name = "Main"})
 local All = MakeTab({Name = "All"})
 
 local Misc = MakeTab({Name = "Misc"})
+
+
+
+
 
 
 
@@ -1803,6 +1807,9 @@ AddToggle(Misc, {
 })
 
 
+
+
+
 local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
@@ -2040,6 +2047,8 @@ AddToggle(Misc, {
 	end
 
 })
+
+
 
 
 
@@ -2295,7 +2304,12 @@ AddButton(Misc, {
 
 
 
+
+
 local Troll = MakeTab({Name = "Troll"})
+
+
+
 
 
 local Players = game:GetService("Players")
