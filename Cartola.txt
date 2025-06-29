@@ -725,6 +725,129 @@ AddToggle(Main, {
 })
 
 
+local Players = game:GetService("Players")
+
+
+
+local RunService = game:GetService("RunService")
+
+
+
+
+
+local player = Players.LocalPlayer
+
+local noclipEnabled = false
+
+
+
+-- Toggle para ativar/desativar o noclip
+
+AddToggle(Main, {
+
+    Name = "Noclip", 
+
+    Default = false,
+
+    Callback = function(Value)
+
+        noclipEnabled = Value
+
+        print("Noclip:", Value and "Ativado" or "Desativado")
+
+    end
+
+})
+
+
+
+-- Loop para desativar colisão 
+
+RunService.Stepped:Connect(function()
+
+    if noclipEnabled and player.Character then
+
+        for _, part in ipairs(player.Character:GetDescendants()) do
+
+            if part:IsA("BasePart") then
+
+                part.CanCollide = false
+
+            end
+
+        end
+
+    end
+
+end)
+
+
+
+
+-- Infinite Jump
+
+
+
+local jumpConnection
+
+
+
+local function toggleInfiniteJump(enable)
+
+    if enable then
+
+        if not jumpConnection then
+
+            jumpConnection = game:GetService("UserInputService").JumpRequest:Connect(function()
+
+                local player = game.Players.LocalPlayer
+
+                local character = player.Character or player.CharacterAdded:Wait()
+
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+                if humanoid then
+
+                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+
+                end
+
+            end)
+
+        end
+
+    else
+
+        if jumpConnection then
+
+            jumpConnection:Disconnect()
+
+            jumpConnection = nil
+
+        end
+
+    end
+
+end
+
+
+
+-- Toggle para ativar/desativar pulo infinito
+
+local Toggle = AddToggle(Main, {
+
+    Name = "Infinite jumps",
+
+    Default = false,
+
+    Callback = function(Value)
+
+        toggleInfiniteJump(Value)
+
+    end
+
+})
+
 
 
 
