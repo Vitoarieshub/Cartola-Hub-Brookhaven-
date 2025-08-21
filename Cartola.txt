@@ -862,7 +862,6 @@ local section = AddSection(All, {"Esp:"})
 
 
 
-
 local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
@@ -2283,6 +2282,90 @@ AddToggle(Misc, {
 
 })
 
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local antiFlingBallConnection
+
+local function isFlingBall(part)
+    return part:IsA("BasePart")
+        and part.CanCollide
+        and (part.Size.Magnitude < 20) 
+        and (part.AssemblyLinearVelocity.Magnitude > 50 or part.AssemblyAngularVelocity.Magnitude > 50)
+end
+
+local function enableAntiFlingBall(state)
+    if state then
+        antiFlingBallConnection = workspace.DescendantAdded:Connect(function(obj)
+            if isFlingBall(obj) then
+                task.wait(0.1)
+                obj.CanCollide = false
+                obj.AssemblyLinearVelocity = Vector3.new(0,0,0)
+                obj.AssemblyAngularVelocity = Vector3.new(0,0,0)
+            end
+        end)
+    else
+        if antiFlingBallConnection then
+            antiFlingBallConnection:Disconnect()
+            antiFlingBallConnection = nil
+        end
+    end
+end
+
+AddToggle(Misc, {
+    Name = "Anti Fling Ball",
+    Default = false,
+    Callback = function(v)
+        enableAntiFlingBall(v)
+    end
+})
+
+
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local antiFlingVehicleConnection
+
+local function isFlingVehicle(part)
+    return part:IsA("BasePart")
+        and part.CanCollide
+        and part.Size.Magnitude > 20 
+        and (part.AssemblyLinearVelocity.Magnitude > 100 or part.AssemblyAngularVelocity.Magnitude > 100)
+end
+
+local function protectVehicle(part)
+    if isFlingVehicle(part) then
+        task.wait(0.1)
+        part.CanCollide = false
+        part.AssemblyLinearVelocity = Vector3.new(0,0,0)
+        part.AssemblyAngularVelocity = Vector3.new(0,0,0)
+    end
+end
+
+local function enableAntiFlingVehicles(state)
+    if state then
+        for _, obj in pairs(workspace:GetDescendants()) do
+            protectVehicle(obj)
+        end
+        antiFlingVehicleConnection = workspace.DescendantAdded:Connect(function(obj)
+            protectVehicle(obj)
+        end)
+    else
+        if antiFlingVehicleConnection then
+            antiFlingVehicleConnection:Disconnect()
+            antiFlingVehicleConnection = nil
+        end
+    end
+end
+
+AddToggle(Misc, {
+    Name = "Anti Fling (Boat, Cars, Helicopters)",
+    Default = false,
+    Callback = function(v)
+        enableAntiFlingVehicles(v)
+    end
+})
 
 
 
