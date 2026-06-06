@@ -2361,11 +2361,183 @@ AddToggle(Misc, {
 
 
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local localPlayer = Players.LocalPlayer
+local trackedPlayers = {}
+local trackedObjects = {}
+local antiFlingEnabled = false
+local trackingStarted = false
+
+local function setCollide(part, state)
+	if part:IsA("BasePart") then
+		part.CanCollide = state
+
+		if not state then
+			part.AssemblyLinearVelocity = Vector3.zero
+			part.AssemblyAngularVelocity = Vector3.zero
+		end
+	end
+end
+
+local function trackCharacter(character)
+	for _, part in ipairs(character:GetDescendants()) do
+		if part:IsA("BasePart") then
+			setCollide(part, not antiFlingEnabled)
+		end
+	end
+
+	character.DescendantAdded:Connect(function(obj)
+		if obj:IsA("BasePart") then
+			setCollide(obj, not antiFlingEnabled)
+		end
+	end)
+end
+
+local function trackPlayer(player)
+	if player == localPlayer then
+		return
+	end
+
+	if player.Character then
+		trackCharacter(player.Character)
+	end
+
+	player.CharacterAdded:Connect(trackCharacter)
+	trackedPlayers[player] = true
+end
+
+local function trackObject(obj)
+	if not obj:IsA("BasePart") then
+		return
+	end
+
+	if localPlayer.Character and obj:IsDescendantOf(localPlayer.Character) then
+		return
+	end
+
+	trackedObjects[obj] = true
+end
+
+local function applyState(state)
+	for player in pairs(trackedPlayers) do
+		local character = player.Character
+
+		if character then
+			for _, part in ipairs(character:GetDescendants()) do
+				if part:IsA("BasePart") then
+					setCollide(part, state)
+				end
+			end
+		end
+	end
+end
+
+local function protectLocalPlayer()
+	local character = localPlayer.Character
+	if not character then
+		return
+	end
+
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if not hrp then
+		return
+	end
+
+	RunService.Heartbeat:Connect(function()
+		if not antiFlingEnabled then
+			return
+		end
+
+		if hrp.AssemblyLinearVelocity.Magnitude > 80 then
+			hrp.AssemblyLinearVelocity = Vector3.zero
+		end
+
+		if hrp.AssemblyAngularVelocity.Magnitude > 40 then
+			hrp.AssemblyAngularVelocity = Vector3.zero
+		end
+	end)
+end
+
+local function enableTracking()
+	if trackingStarted then
+		return
+	end
+
+	trackingStarted = true
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		trackPlayer(player)
+	end
+
+	Players.PlayerAdded:Connect(trackPlayer)
+
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		trackObject(obj)
+	end
+
+	Workspace.DescendantAdded:Connect(trackObject)
+
+	if localPlayer.Character then
+		protectLocalPlayer()
+	end
+
+	localPlayer.CharacterAdded:Connect(function()
+		task.wait(1)
+		protectLocalPlayer()
+	end)
+
+	RunService.RenderStepped:Connect(function()
+		if not antiFlingEnabled then
+			return
+		end
+
+		for player in pairs(trackedPlayers) do
+			local character = player.Character
+
+			if character then
+				for _, part in ipairs(character:GetDescendants()) do
+					if part:IsA("BasePart") then
+						setCollide(part, false)
+					end
+				end
+			end
+		end
+
+		for obj in pairs(trackedObjects) do
+			if obj and obj.Parent then
+				if obj.AssemblyLinearVelocity.Magnitude > 100 then
+					obj.AssemblyLinearVelocity = Vector3.zero
+				end
+
+				if obj.AssemblyAngularVelocity.Magnitude > 50 then
+					obj.AssemblyAngularVelocity = Vector3.zero
+				end
+			end
+		end
+	end)
+end
+
+AddToggle(Servidor, {
+	Name = "Anti fling teste",
+	Default = false,
+	Callback = function(state)
+		antiFlingEnabled = state
+
+		if state then
+			enableTracking()
+		else
+			applyState(true)
+		end
+	end
+})
+
+
 
 
 local section = AddSection(Misc, {"Home:"})
-
-
 
 
 
