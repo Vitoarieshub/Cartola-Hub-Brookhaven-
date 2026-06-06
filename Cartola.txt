@@ -2520,7 +2520,7 @@ local function enableTracking()
 	end)
 end
 
-AddToggle(Servidor, {
+AddToggle(Misc, {
 	Name = "Anti fling teste",
 	Default = false,
 	Callback = function(state)
