@@ -500,229 +500,137 @@ local section = AddSection(Main, {"Characters:"})
 
 
 
-local Players = game:GetService("Players")
 
+local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-
-
--- WALKING SPEED
-
-local velocidadeAtivada = false
-
-local velocidadeValor = 25
-
-
+-- WalkSpeed
+local WalkSpeedEnabled = false
+local WalkSpeedValue = 25
 
 AddTextBox(Main, {
-
-    Name = "WalkSpeed",
-
-    Default = "25",
-
-    PlaceholderText = "Digite a velocidade (16-250)",
-
-    ClearText = true,
-
-    Callback = function(Value)
-
-        local num = tonumber(Value)
-
-        if num then
-
-            velocidadeValor = math.clamp(num, 16, 250)
-
-            if velocidadeAtivada then
-
-                local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-
-                local humanoid = character:FindFirstChildOfClass("Humanoid")
-
-                if humanoid then
-
-                    humanoid.WalkSpeed = velocidadeValor
-
-                end
-
-            end
-
-        end
-
-    end
-
+	Name = "WalkSpeed",
+	Default = "25",
+	PlaceholderText = "16 - 250",
+	ClearText = true,
+	Callback = function(Value)
+		local Num = tonumber(Value)
+		if Num then
+			WalkSpeedValue = math.clamp(Num, 16, 250)
+		end
+	end
 })
-
-
 
 AddToggle(Main, {
-
-    Name = "WalkSpeed",
-
-    Default = false,
-
-    Callback = function(Value)
-
-        velocidadeAtivada = Value
-
-        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-
-        if humanoid then
-
-            humanoid.WalkSpeed = Value and velocidadeValor or 16
-
-        end
-
-    end
-
+	Name = "WalkSpeed",
+	Default = false,
+	Callback = function(Value)
+		WalkSpeedEnabled = Value
+	end
 })
 
-
-
--- SUPER JUMP
-
-local jumpAtivado = false
-
-local jumpPowerSelecionado = 40
-
-local jumpPowerPadrao = 50
-
-
-
-local function aplicarJumpPower()
-
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-
-    if humanoid then
-
-        humanoid.UseJumpPower = true
-
-        humanoid.JumpPower = jumpAtivado and jumpPowerSelecionado or jumpPowerPadrao
-
-    end
-
-end
-
-
+-- JumpPower
+local JumpEnabled = false
+local JumpValue = 40
 
 AddTextBox(Main, {
-
-    Name = "JumpPower",
-
-    Default = "40",
-
-    PlaceholderText = "Digite o Altura Do Pulo (10-900)",
-
-    ClearText = true,
-
-    Callback = function(Value)
-
-        local num = tonumber(Value)
-
-        if num then
-
-            jumpPowerSelecionado = math.clamp(num, 10, 900)
-
-            if jumpAtivado then
-
-                aplicarJumpPower()
-
-            end
-
-        end
-
-    end
-
+	Name = "JumpPower",
+	Default = "40",
+	PlaceholderText = "10 - 900",
+	ClearText = true,
+	Callback = function(Value)
+		local Num = tonumber(Value)
+		if Num then
+			JumpValue = math.clamp(Num, 10, 900)
+		end
+	end
 })
-
-
 
 AddToggle(Main, {
-
-    Name = "JumpPower",
-
-    Default = false,
-
-    Callback = function(Value)
-
-        jumpAtivado = Value
-
-        aplicarJumpPower()
-
-    end
-
+	Name = "JumpPower",
+	Default = false,
+	Callback = function(Value)
+		JumpEnabled = Value
+	end
 })
 
-
-
--- GRAVITY
-
-local gravidadeAtivada = false
-
-local gravidadeSelecionada = 196.2
-
-local gravidadePadrao = 196.2
-
-
+-- Gravity
+local GravityEnabled = false
+local GravityValue = 196.2
+local DefaultGravity = workspace.Gravity
 
 AddTextBox(Main, {
-
-    Name = "Gravity",
-
-    Default = "196.2",
-
-    PlaceholderText = "Digite a gravidade (0-500)",
-
-    ClearText = true,
-
-    Callback = function(Value)
-
-        local num = tonumber(Value)
-
-        if num then
-
-            gravidadeSelecionada = math.clamp(num, 0, 500)
-
-            if gravidadeAtivada then
-
-                workspace.Gravity = gravidadeSelecionada
-
-            end
-
-        end
-
-    end
-
+	Name = "Gravity",
+	Default = tostring(DefaultGravity),
+	PlaceholderText = "0 - 500",
+	ClearText = true,
+	Callback = function(Value)
+		local Num = tonumber(Value)
+		if Num then
+			GravityValue = math.clamp(Num, 0, 500)
+		end
+	end
 })
-
-
 
 AddToggle(Main, {
+	Name = "Gravity",
+	Default = false,
+	Callback = function(Value)
+		GravityEnabled = Value
 
-    Name = "Gravity",
-
-    Default = false,
-
-    Callback = function(Value)
-
-        gravidadeAtivada = Value
-
-        if gravidadeAtivada then
-
-            workspace.Gravity = gravidadeSelecionada
-
-        else
-
-            workspace.Gravity = gravidadePadrao
-
-        end
-
-    end
-
+		if not Value then
+			workspace.Gravity = DefaultGravity
+		end
+	end
 })
+
+-- Aplicação contínua
+task.spawn(function()
+	while task.wait(0.2) do
+		local Character = LocalPlayer.Character
+		local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+
+		if Humanoid then
+			if WalkSpeedEnabled then
+				Humanoid.WalkSpeed = WalkSpeedValue
+			end
+
+			if JumpEnabled then
+				Humanoid.UseJumpPower = true
+				Humanoid.JumpPower = JumpValue
+			end
+		end
+
+		if GravityEnabled then
+			workspace.Gravity = GravityValue
+		end
+	end
+end)
+
+-- Reaplicar após respawn
+LocalPlayer.CharacterAdded:Connect(function()
+	task.wait(1)
+
+	local Humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+	if Humanoid then
+		if WalkSpeedEnabled then
+			Humanoid.WalkSpeed = WalkSpeedValue
+		end
+
+		if JumpEnabled then
+			Humanoid.UseJumpPower = true
+			Humanoid.JumpPower = JumpValue
+		end
+	end
+
+	if GravityEnabled then
+		workspace.Gravity = GravityValue
+	end
+end)
+
+
+
 
 
 local Players = game:GetService("Players")
